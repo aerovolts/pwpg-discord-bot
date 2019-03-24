@@ -72,6 +72,7 @@ class GroupManager(commands.Cog):
                     )
     async def listGroupsCommand(self, context, groupName=None):
         messageToSend = ''
+        mc = MemberConverter()
         if (groupName is None) or (groupName is RESERVED_WORDS) or (groupName not in groupData): # Conditions to list all groups (no name given, reserved words, or isn't in groupData)
             messageToSend += 'There are currently ' + str(len(groupData)) + ' groups on PWPG!\n'
             for n in groupData:
@@ -83,7 +84,9 @@ class GroupManager(commands.Cog):
             if groupData[groupName]['description'] != 'No Description': messageToSend += groupData[groupName]['description'] + '\n' # Add the description if the group has one
             messageToSend += '---' + '\n'
             for m in groupData[groupName]['member']: # Add each member
-                messageToSend += str(groupData[groupName]['member'][m]['displayName']) + '\n'
+                # messageToSend += str(m) + '\n'
+                member = await mc.convert(context, m)
+                messageToSend += member.name + '\n'
         else:
             print('how did this even happen?')
             messageToSend += 'THIS SHOULD NOT BE SEEN!?'
@@ -99,7 +102,7 @@ class GroupManager(commands.Cog):
                     pass_context=True
                     )
     async def listUsersGroups(self, context):
-        messageToSend = '```' + str(context.author.display_name) + ' is in:\n'
+        messageToSend = '```' + context.author.display_name + ' is in:\n'
         for groupName in groupData:
             if str(context.author) in groupData[groupName]['member']:
                 messageToSend += '\t' + groupName + ':\t Offline Ping: ' + str(groupData[groupName]['member'][str(context.author)]['offlinePing']) + '\n'
@@ -119,9 +122,9 @@ class GroupManager(commands.Cog):
                     )
     async def joinGroupCommand(self, context, groupName, offlinePing=True):
         if joinGroup(context, groupName, offlinePing):
-            await context.send('`'+ str(context.author.display_name) + '` has been added to `' + groupName + '`')
+            await context.send('`'+ context.author.display_name + '` has been added to `' + groupName + '`')
         else:
-            await context.send('`'+ str(context.author.display_name) + '` could not be added to `' + groupName + '`')
+            await context.send('`'+ context.author.display_name + '` could not be added to `' + groupName + '`')
 
     # Leaves a group the user is a member of
     @commands.command(name='unsub',
@@ -134,9 +137,9 @@ class GroupManager(commands.Cog):
                     )
     async def leaveGroupCommand(self, context, groupName):
         if leaveGroup(context, groupName):
-            await context.send('`' + str(context.author.display_name) + '` has left `' + groupName + '`')
+            await context.send('`' + context.author.display_name + '` has left `' + groupName + '`')
         else:
-            await context.send('`' + str(context.author.display_name) + '` could not leave `' + groupName + '`')
+            await context.send('`' + context.author.display_name + '` could not leave `' + groupName + '`')
 
     # Ping a group with an optional message
     # Check if user is online, consult property
@@ -154,7 +157,7 @@ class GroupManager(commands.Cog):
             m = MemberConverter()
 
             # Assemble message to send.
-            messageToSend = '`' + str(context.author.display_name) + '` has pinged `' + groupName + '`.'
+            messageToSend = '`' + context.author.display_name + '` has pinged `' + groupName + '`.'
             if optionalMessage is not None:
                 messageToSend += '\n' + optionalMessage
 
@@ -291,7 +294,7 @@ def editGroupDescription(name: str, description: str):
 # TODO error throws
 def joinGroup(context, name: str, offlinePing=True):
     global groupData
-    userProps = {'offlinePing': offlinePing, 'displayName': context.author.display_name}
+    userProps = {'offlinePing': offlinePing}
     if name in groupData:
         if str(context.author) in groupData[name]['member']:
             print('user already in group -> throw error')
